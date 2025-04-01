@@ -206,10 +206,6 @@ fn main() {
         let test_case_result = run(&mut child, test_case);
         spinner.finish_and_clear();
 
-        if !test_case_result.stderr_content.is_empty() {
-            print(&test_case_result.stderr_content, Some("stderr 결과"));
-        }
-
         match test_case.output_file_path {
             Some(ref path) => {
                 let mut output_file = std::fs::File::open(path).expect("출력 파일을 열 수 없음");
@@ -221,12 +217,12 @@ fn main() {
                 if test_case_result.stdout_content == expected_output {
                     println!(
                         "{}",
-                        format!(" 󰙨 {}:  테스트 성공", test_case_result.test_case.name).on_green()
+                        format!(" {}:  테스트 성공", test_case_result.test_case.name).cyan()
                     );
                 } else {
                     println!(
                         "{}",
-                        format!(" 󰙨 {}:  테스트 실패", test_case_result.test_case.name).on_green()
+                        format!(" {}:  테스트 실패", test_case_result.test_case.name).red()
                     );
 
                     let mut diff_lines: Vec<String> = vec![];
@@ -249,16 +245,24 @@ fn main() {
                         }
                     }
 
-                    print(&diff_lines.join("\n"), Some("출력 비교"))
+                    print(&diff_lines.join("\n"), Some("Comparison"));
+                }
+
+                if !test_case_result.stderr_content.is_empty() {
+                    print(&test_case_result.stderr_content, Some("stderr"));
                 }
             }
             None => {
-                spinner.finish_with_message(format!(
-                    "󰙨 {}:  예시 출력파일이 존재하지 않음",
-                    test_case.name
-                ));
+                println!(
+                    "{}",
+                    format!(" {}:  예시 출력파일이 존재하지 않음", test_case.name).yellow()
+                );
 
-                print(&test_case_result.stdout_content, Some("출력 결과"));
+                if !test_case_result.stderr_content.is_empty() {
+                    print(&test_case_result.stderr_content, Some("stderr"));
+                }
+
+                print(&test_case_result.stdout_content, Some("stdout"));
             }
         }
     }
