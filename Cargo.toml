@@ -1,5 +1,8 @@
 [package]
 name = "teco"
+license = "MIT"
+description = "A simple code test runner"
+homepage = "https://github.com/lewohy/teco"
 version = "0.1.0"
 edition = "2021"
 
