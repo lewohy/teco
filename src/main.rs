@@ -107,18 +107,6 @@ fn get_test_cases(path: &Path) -> Vec<TestCase> {
 }
 
 fn run<'a>(child: &'a mut Child, test_case: &'a TestCase) -> TestCaseResult<'a> {
-    let mut child_stdin = child
-        .stdin
-        .take()
-        .expect("자식 프로세스의 stdin을 얻을 수 없음");
-    let mut child_stdout = child
-        .stdout
-        .take()
-        .expect("자식 프로세스의 stdout을 얻을 수 없음");
-    let mut child_stderr = child
-        .stderr
-        .take()
-        .expect("자식 프로세스의 stderr을 얻을 수 없음");
     let mut input_file =
         std::fs::File::open(&test_case.input_file_path).expect("입력 파일을 열 수 없음");
 
@@ -127,14 +115,30 @@ fn run<'a>(child: &'a mut Child, test_case: &'a TestCase) -> TestCaseResult<'a> 
         .read_to_string(&mut input)
         .expect("입력 파일을 읽을 수 없음");
 
-    child_stdin
-        .write_all(input.as_bytes())
-        .expect("자식 프로세스에 입력을 쓸 수 없음");
+    {
+        let mut child_stdin = child
+            .stdin
+            .take()
+            .expect("자식 프로세스의 stdin을 얻을 수 없음");
+        child_stdin
+            .write_all(input.as_bytes())
+            .expect("자식 프로세스에 입력을 쓸 수 없음");
+    }
+
+    let mut child_stdout = child
+        .stdout
+        .take()
+        .expect("자식 프로세스의 stdout을 얻을 수 없음");
 
     let mut stdout_content = String::new();
     child_stdout
         .read_to_string(&mut stdout_content)
         .expect("자식 프로세스의 출력을 읽을 수 없음");
+
+    let mut child_stderr = child
+        .stderr
+        .take()
+        .expect("자식 프로세스의 stderr을 얻을 수 없음");
 
     let mut stderr_content = String::new();
     child_stderr
