@@ -21,6 +21,7 @@ struct TestCase {
 #[derive(Debug)]
 struct TestCaseResult<'a> {
     test_case: &'a TestCase,
+    input_content: String,
     stdout_content: String,
     stderr_content: String,
 }
@@ -35,6 +36,10 @@ struct Args {
     /// *.in과 *.out 파일이 있는 디렉토리
     #[arg(short, long)]
     case_dir: String,
+
+    /// input의 출력 여부
+    #[arg(short, long, default_value_t = false)]
+    show_input: bool,
 }
 
 impl Ord for TestCase {
@@ -147,6 +152,7 @@ fn run<'a>(child: &'a mut Child, test_case: &'a TestCase) -> TestCaseResult<'a> 
 
     TestCaseResult {
         test_case,
+        input_content: input,
         stdout_content,
         stderr_content,
     }
@@ -219,11 +225,19 @@ fn main() {
                         "{}",
                         format!(" {}:  테스트 성공", test_case_result.test_case.name).cyan()
                     );
+
+                    if args.show_input {
+                        print(&test_case_result.input_content, Some("입력 내용"));
+                    }
                 } else {
                     println!(
                         "{}",
                         format!(" {}:  테스트 실패", test_case_result.test_case.name).red()
                     );
+
+                    if args.show_input {
+                        print(&test_case_result.input_content, Some("입력 내용"));
+                    }
 
                     let mut diff_lines: Vec<String> = vec![];
 
@@ -257,6 +271,10 @@ fn main() {
                     "{}",
                     format!(" {}:  예시 출력파일이 존재하지 않음", test_case.name).yellow()
                 );
+
+                if args.show_input {
+                    print(&test_case_result.input_content, Some("입력 내용"));
+                }
 
                 if !test_case_result.stderr_content.is_empty() {
                     print(&test_case_result.stderr_content, Some("stderr"));
