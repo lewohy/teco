@@ -11,3 +11,7 @@ Options:
   -h, --help                 Print help
   -V, --version              Print version
 ```
+
+
+- [ ] target에 arguments를 넣을 수 있도록 수정
+- [ ] input, output 파일을 지정할 수 있도록 수정
