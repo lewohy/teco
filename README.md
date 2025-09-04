@@ -3,11 +3,12 @@
 ## Usage
 
 ```sh
-Usage: teco --target <TARGET> --case-dir <CASE_DIR>
+Usage: teco [OPTIONS] --command <COMMAND> --case-dir <CASE_DIR>
 
 Options:
-  -t, --target <TARGET>      타겟 바이너리 경로
-  -c, --case-dir <CASE_DIR>  *.in과 *.out 파일이 있는 디렉토리
+      --command <COMMAND>    실행할 명령 windows에서는 cmd /C "명령" 형태로 실행됨 그 외는 sh -c '명령' 형태로 실행됨
+      --case-dir <CASE_DIR>  *.in과 *.out 파일이 있는 디렉토리
+      --show-input           input의 출력 여부
   -h, --help                 Print help
   -V, --version              Print version
 ```
