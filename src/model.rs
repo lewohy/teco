@@ -75,11 +75,7 @@ impl TecoCase {
                 continue;
             }
 
-            let test_name = filename
-                .split('.')
-                .next()
-                .expect("확장자를 분리할 수 없음")
-                .to_string();
+            let test_name = filename.trim_end_matches(".in").to_string();
             let output_file_path = match input_file_path
                 .parent()
                 .expect("부모 디렉토리를 얻을 수 없음")
