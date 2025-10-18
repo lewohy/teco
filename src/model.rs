@@ -52,7 +52,7 @@ impl TokenizedContent {
 }
 
 impl TecoCase {
-    pub fn from_path(path: PathBuf) -> Vec<TecoCase> {
+    pub fn from_path(path: PathBuf, input_ext: &str, output_ext: &str) -> Vec<TecoCase> {
         let mut paths: Vec<TecoCase> = vec![];
 
         for entry in path
@@ -71,15 +71,17 @@ impl TecoCase {
                 .to_str()
                 .expect("파일 이름을 문자열로 변환할 수 없음");
 
-            if !filename.ends_with(".in") {
+            let input_ext_part = format!(".{}", input_ext);
+
+            if !filename.ends_with(&input_ext_part) {
                 continue;
             }
 
-            let test_name = filename.trim_end_matches(".in").to_string();
+            let test_name = filename.trim_end_matches(&input_ext_part).to_string();
             let output_file_path = match input_file_path
                 .parent()
                 .expect("부모 디렉토리를 얻을 수 없음")
-                .join(format!("{}.out", test_name))
+                .join(format!("{}.{}", test_name, output_ext))
             {
                 path if path.exists() => Some(path),
                 _ => None,

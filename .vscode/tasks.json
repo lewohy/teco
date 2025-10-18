@@ -7,16 +7,14 @@
             "label": "cargo: build",
             "type": "shell",
             "command": "cargo",
-            "args": [
-                "build",
-            ],
+            "args": ["build"],
             "group": {
                 "kind": "build",
-                "isDefault": true
-            }
+                "isDefault": true,
+            },
         },
         {
-            "label": "test",
+            "label": "test 1",
             "type": "shell",
             "command": "cargo",
             "args": [
@@ -26,12 +24,43 @@
                 "(sleep 3; cat)",
                 "--case-dir",
                 "cases",
-                // "--show-input"
+                "--show-input",
+                "--input-ext",
+                "din",
+                "--output-ext",
+                "ans",
             ],
             "group": {
                 "kind": "test",
-                "isDefault": true
-            }
-        }
-    ]
+                "isDefault": false,
+            },
+        },
+        {
+            "label": "test 2",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--",
+                "--command",
+                "(sleep 3; cat)",
+                "--case-dir",
+                "cases",
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": false,
+            },
+        },
+        {
+            "label": "test all",
+            "type": "shell",
+            "dependsOn": ["test 1", "test 2"],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "test",
+                "isDefault": true,
+            },
+        },
+    ],
 }

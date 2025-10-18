@@ -32,6 +32,14 @@ struct Args {
     /// input의 출력 여부
     #[arg(long, default_value_t = false)]
     show_input: bool,
+
+    /// input 파일의 확장자
+    #[arg(long, default_value = "in")]
+    input_ext: String,
+
+    /// output 파일의 확장자
+    #[arg(long, default_value = "out")]
+    output_ext: String,
 }
 
 fn run(child: Child, case: TecoCase) -> TecoResult {
@@ -81,7 +89,7 @@ fn run(child: Child, case: TecoCase) -> TecoResult {
 fn main() {
     let args = Args::parse();
     let cases_path: PathBuf = args.case_dir.as_str().into();
-    let cases = TecoCase::from_path(cases_path);
+    let cases = TecoCase::from_path(cases_path, &args.input_ext, &args.output_ext);
 
     info!("{} Cases loaded", cases.len());
 
