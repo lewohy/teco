@@ -177,10 +177,6 @@ fn main() {
 
                     view::print(&diff_lines.join("\n"), Some("Comparison"));
                 }
-
-                if !result.stderr_content.is_empty() {
-                    view::print(&result.stderr_content, Some("stderr"));
-                }
             }
             None => {
                 spinner.unknown();
