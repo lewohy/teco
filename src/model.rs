@@ -1,6 +1,13 @@
 use std::{io::Read, path::PathBuf};
 
 #[derive(Debug)]
+pub enum ResultState {
+    Success,
+    Fail,
+    Unknown,
+}
+
+#[derive(Debug)]
 pub enum Token {
     Word(String),
     // Space(String),
@@ -11,7 +18,7 @@ pub struct TokenizedContent {
     pub lines: Vec<Vec<Token>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TecoCase {
     pub name: String,
     pub input_file: PathBuf,
@@ -24,6 +31,7 @@ pub struct TecoResult {
     pub input: String,
     pub output: TokenizedContent,
     pub stderr_content: String,
+    pub state: ResultState,
 }
 
 impl Token {
@@ -139,5 +147,69 @@ impl TecoCase {
         }
 
         return None;
+    }
+}
+
+impl TecoResult {
+    pub fn new(
+        case: TecoCase,
+        input: String,
+        stdout_content: String,
+        stderr_content: String,
+    ) -> TecoResult {
+        let tokenized = TokenizedContent::new(stdout_content);
+
+        let state = match case.get_expected_tokens() {
+            Some(expected) => {
+                let mut output_tokens = tokenized.tokens();
+
+                let mut expected_content = String::new();
+                let mut output_content = String::new();
+
+                for expected_line in expected.lines {
+                    let next_tokens = output_tokens
+                        .by_ref()
+                        .take(expected_line.len())
+                        .collect::<Vec<&Token>>();
+
+                    expected_content.push_str(&format!(
+                        "{}\n",
+                        expected_line
+                            .iter()
+                            .map(|token| match token {
+                                Token::Word(s) => s.to_string(),
+                            })
+                            .collect::<Vec<String>>()
+                            .join(" ")
+                    ));
+
+                    output_content.push_str(&format!(
+                        "{}\n",
+                        next_tokens
+                            .iter()
+                            .map(|token| match token {
+                                Token::Word(s) => s.to_string(),
+                            })
+                            .collect::<Vec<String>>()
+                            .join(" ")
+                    ));
+                }
+
+                if output_content == expected_content {
+                    ResultState::Success
+                } else {
+                    ResultState::Fail
+                }
+            }
+            None => ResultState::Unknown,
+        };
+
+        TecoResult {
+            case,
+            input,
+            output: tokenized,
+            state,
+            stderr_content: stderr_content,
+        }
     }
 }

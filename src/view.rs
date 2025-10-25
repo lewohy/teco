@@ -14,13 +14,7 @@ impl TecoSpinner {
         let spinner = ProgressBar::new_spinner();
         spinner.set_style(
             ProgressStyle::with_template(
-                format!(
-                    "  {} {} {}",
-                    " {prefix} ".bold(),
-                    "{spinner}",
-                    "{msg}"
-                )
-                .as_str(),
+                format!("  {} {} {}", " {prefix} ".bold(), "{spinner}", "{msg}").as_str(),
             )
             .unwrap(),
         );
@@ -31,43 +25,10 @@ impl TecoSpinner {
         Self { spinner }
     }
 
-    pub fn success(&self) {
-        self.spinner.finish();
+    pub fn finish(self, message: String) {
+        self.spinner.finish_and_clear();
 
-        self.spinner.set_style(
-            ProgressStyle::with_template(
-                format!("  {}", " {prefix}  {msg} ".on_bright_green()).as_str(),
-            )
-            .unwrap(),
-        );
-        self.spinner
-            .set_message(format!("{}", format!(" Passed")));
-    }
-
-    pub fn fail(&self) {
-        self.spinner.finish();
-
-        self.spinner.set_style(
-            ProgressStyle::with_template(
-                format!("  {}", " {prefix}  {msg} ".on_bright_red()).as_str(),
-            )
-            .unwrap(),
-        );
-        self.spinner
-            .set_message(format!("{}", format!(" Failed")));
-    }
-
-    pub fn unknown(&self) {
-        self.spinner.finish();
-
-        self.spinner.set_style(
-            ProgressStyle::with_template(
-                format!("  {}", " {prefix}  {msg} ".on_bright_yellow()).as_str(),
-            )
-            .unwrap(),
-        );
-        self.spinner
-            .set_message(format!("{}", format!(" Unknown")));
+        println!("{}", message);
     }
 }
 

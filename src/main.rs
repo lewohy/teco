@@ -12,7 +12,7 @@ use std::{
 };
 
 use crate::{
-    model::{TecoCase, TecoResult, Token, TokenizedContent},
+    model::{TecoCase, TecoResult, Token},
     view::TecoSpinner,
 };
 
@@ -42,10 +42,10 @@ struct Args {
     output_ext: String,
 }
 
-fn run(child: Child, case: TecoCase) -> TecoResult {
+fn run(child: Child, case: &TecoCase) -> TecoResult {
     let mut input_file = std::fs::File::open(&case.input_file).expect("입력 파일을 열 수 없음");
 
-    let input = {
+    let input_content = {
         let mut input = String::new();
         input_file
             .read_to_string(&mut input)
@@ -54,36 +54,36 @@ fn run(child: Child, case: TecoCase) -> TecoResult {
         input
     };
 
-    let output = {
+    {
         let mut stdin = child.stdin.expect("자식 프로세스의 stdin을 얻을 수 없음");
         stdin
-            .write_all(input.as_bytes())
+            .write_all(input_content.as_bytes())
             .expect("자식 프로세스에 입력을 쓸 수 없음");
-        drop(stdin);
+    }
 
+    let stdout_content = {
         let mut stdout = child.stdout.expect("자식 프로세스의 stdout을 얻을 수 없음");
 
-        let mut output = String::new();
+        let mut stdout_content = String::new();
         stdout
-            .read_to_string(&mut output)
+            .read_to_string(&mut stdout_content)
             .expect("자식 프로세스의 출력을 읽을 수 없음");
 
-        output
+        stdout_content
     };
 
-    let mut child_stderr = child.stderr.expect("자식 프로세스의 stderr을 얻을 수 없음");
+    let stderr_content = {
+        let mut child_stderr = child.stderr.expect("자식 프로세스의 stderr을 얻을 수 없음");
 
-    let mut stderr_content = String::new();
-    child_stderr
-        .read_to_string(&mut stderr_content)
-        .expect("자식 프로세스의 stderr을 읽을 수 없음");
+        let mut stderr_content = String::new();
+        child_stderr
+            .read_to_string(&mut stderr_content)
+            .expect("자식 프로세스의 stderr을 읽을 수 없음");
 
-    TecoResult {
-        case,
-        input,
-        output: TokenizedContent::new(output),
-        stderr_content,
-    }
+        stderr_content
+    };
+
+    TecoResult::new(case.clone(), input_content, stdout_content, stderr_content)
 }
 
 fn main() {
@@ -93,7 +93,7 @@ fn main() {
 
     info!("{} Cases loaded", cases.len());
 
-    for case in cases {
+    for (index, case) in cases.iter().enumerate() {
         let spinner = TecoSpinner::new(&case);
 
         let mut command = if cfg!(target_os = "windows") {
@@ -114,6 +114,22 @@ fn main() {
             .expect("프로세스를 실행할 수 없음");
 
         let result = run(child, case);
+
+        spinner.finish(format!(
+            "{:>2}/{:<5}{:<5}{}",
+            index,
+            cases.len(),
+            result.case.name,
+            match result.state {
+                model::ResultState::Success => "PASS".green(),
+                model::ResultState::Fail => "FAIL".red(),
+                model::ResultState::Unknown => "UNKNOWN".yellow(),
+            }
+        ));
+
+        if args.show_input {
+            view::print(&result.input, Some("입력 내용"));
+        }
 
         match result.case.get_expected_tokens() {
             Some(expected) => {
@@ -152,18 +168,7 @@ fn main() {
                 }
 
                 if expected_content == output_content {
-                    spinner.success();
-
-                    if args.show_input {
-                        view::print(&result.input, Some("입력 내용"));
-                    }
                 } else {
-                    spinner.fail();
-
-                    if args.show_input {
-                        view::print(&result.input, Some("입력 내용"));
-                    }
-
                     let mut diff_lines: Vec<String> = vec![];
 
                     for (expected, actual) in expected_content
@@ -187,12 +192,6 @@ fn main() {
                 }
             }
             None => {
-                spinner.unknown();
-
-                if args.show_input {
-                    view::print(&result.input, Some("입력 내용"));
-                }
-
                 view::print_tokenized_lines(&result.output, Some("stdout"));
             }
         }
