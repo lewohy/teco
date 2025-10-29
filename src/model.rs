@@ -1,77 +1,50 @@
-use std::{io::Read, path::PathBuf};
+use std::{fs::File, io::Read, path::PathBuf};
 
-#[derive(Debug)]
-pub enum ResultState {
-    Success,
-    Fail,
-    Unknown,
-}
-
-#[derive(Debug)]
-pub enum Token {
-    Word(String),
-    // Space(String),
-}
-
-#[derive(Debug)]
-pub struct TokenizedContent {
-    pub lines: Vec<Vec<Token>>,
-}
+use crate::token::{tokenize, Token};
 
 #[derive(Debug, Clone)]
 pub struct TecoCase {
     pub name: String,
-    pub input_file: PathBuf,
-    pub expected_file: Option<PathBuf>,
+    pub input_content: String,
+    pub expected_tokens: Option<Vec<Token>>,
 }
 
-#[derive(Debug)]
-pub struct TecoResult {
+#[derive(Debug, Clone)]
+pub enum TecoResult {
+    Pass,
+    Fail { expected_content: String },
+    Unknown,
+}
+
+#[derive(Debug, Clone)]
+pub struct TecoExecution {
     pub case: TecoCase,
-    pub input: String,
-    pub output: TokenizedContent,
+    pub stdout_content: String,
     pub stderr_content: String,
-    pub state: ResultState,
-}
-
-impl Token {
-    pub fn tokenize(source: &str) -> Vec<Self> {
-        return source
-            .split_whitespace()
-            .map(|s| Token::Word(s.to_string()))
-            .collect();
-    }
-}
-
-impl TokenizedContent {
-    pub fn new(content: String) -> Self {
-        Self {
-            lines: content
-                .lines()
-                .map(|line| Token::tokenize(line))
-                .collect::<Vec<Vec<Token>>>()
-                .into(),
-        }
-    }
-
-    pub fn tokens(&self) -> impl Iterator<Item = &Token> {
-        self.lines.iter().flatten()
-    }
+    pub result: TecoResult,
 }
 
 impl TecoCase {
     pub fn from_path(path: PathBuf, input_ext: &str, output_ext: &str) -> Vec<TecoCase> {
-        let mut paths: Vec<TecoCase> = vec![];
+        let mut cases: Vec<TecoCase> = vec![];
 
         for entry in path
             .read_dir()
             .expect("테스트 케이스 디렉토리를 열 수 없음")
         {
-            let input_file_path = entry.expect("entry를 얻을 수 없음").path();
+            let input_file_path = entry.unwrap().path();
 
-            if !input_file_path.is_file() {
-                continue;
-            }
+            let input_content = {
+                let mut input_file =
+                    std::fs::File::open(&input_file_path).expect("입력 파일을 열 수 없음");
+                let mut input = String::new();
+
+                input_file
+                    .read_to_string(&mut input)
+                    .expect("입력 파일을 읽을 수 없음");
+
+                input
+            };
 
             let filename = input_file_path
                 .file_name()
@@ -86,25 +59,40 @@ impl TecoCase {
             }
 
             let test_name = filename.trim_end_matches(&input_ext_part).to_string();
-            let output_file_path = match input_file_path
+            let expected_file_path = match input_file_path
                 .parent()
-                .expect("부모 디렉토리를 얻을 수 없음")
+                .expect("input 파일의 부모 디렉토리를 얻을 수 없음")
                 .join(format!("{}.{}", test_name, output_ext))
             {
                 path if path.exists() => Some(path),
                 _ => None,
             };
+            let expected_content = match expected_file_path {
+                Some(path) => {
+                    let mut content = String::new();
+                    File::open(path)
+                        .expect("expect 파일을 열 수 없음")
+                        .read_to_string(&mut content)
+                        .unwrap();
 
-            paths.push(TecoCase {
+                    Some(content)
+                }
+                None => None,
+            };
+
+            cases.push(TecoCase {
                 name: test_name,
-                input_file: input_file_path,
-                expected_file: output_file_path,
+                input_content,
+                expected_tokens: match expected_content {
+                    Some(content) => Some(tokenize(content)),
+                    None => None,
+                },
             });
         }
 
-        paths.sort();
+        cases.sort();
 
-        paths
+        cases
     }
 }
 
@@ -125,91 +113,5 @@ impl PartialOrd for TecoCase {
 impl PartialEq for TecoCase {
     fn eq(&self, other: &Self) -> bool {
         return self.name == other.name;
-    }
-}
-
-impl TecoCase {
-    pub fn get_expected_tokens(&self) -> Option<TokenizedContent> {
-        if let Some(expected_path) = &self.expected_file {
-            let mut expected_file =
-                std::fs::File::open(expected_path).expect("예시 파일을 열 수 없음");
-
-            let expected = {
-                let mut content = String::new();
-                expected_file
-                    .read_to_string(&mut content)
-                    .expect("기대 출력 파일을 읽을 수 없음");
-
-                content
-            };
-
-            return Some(TokenizedContent::new(expected));
-        }
-
-        return None;
-    }
-}
-
-impl TecoResult {
-    pub fn new(
-        case: TecoCase,
-        input: String,
-        stdout_content: String,
-        stderr_content: String,
-    ) -> TecoResult {
-        let tokenized = TokenizedContent::new(stdout_content);
-
-        let state = match case.get_expected_tokens() {
-            Some(expected) => {
-                let mut output_tokens = tokenized.tokens();
-
-                let mut expected_content = String::new();
-                let mut output_content = String::new();
-
-                for expected_line in expected.lines {
-                    let next_tokens = output_tokens
-                        .by_ref()
-                        .take(expected_line.len())
-                        .collect::<Vec<&Token>>();
-
-                    expected_content.push_str(&format!(
-                        "{}\n",
-                        expected_line
-                            .iter()
-                            .map(|token| match token {
-                                Token::Word(s) => s.to_string(),
-                            })
-                            .collect::<Vec<String>>()
-                            .join(" ")
-                    ));
-
-                    output_content.push_str(&format!(
-                        "{}\n",
-                        next_tokens
-                            .iter()
-                            .map(|token| match token {
-                                Token::Word(s) => s.to_string(),
-                            })
-                            .collect::<Vec<String>>()
-                            .join(" ")
-                    ));
-                }
-
-                if output_content == expected_content {
-                    ResultState::Success
-                } else {
-                    ResultState::Fail
-                }
-            }
-            None => ResultState::Unknown,
-        };
-
-        TecoResult {
-            case,
-            input,
-            output: tokenized,
-            state,
-            stderr_content: stderr_content,
-        }
     }
 }

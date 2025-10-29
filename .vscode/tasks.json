@@ -14,21 +14,26 @@
             },
         },
         {
-            "label": "test 1",
+            "label": "test: help",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["run", "--", "--help"],
+            "group": {
+                "kind": "test",
+                "isDefault": false,
+            },
+        },
+        {
+            "label": "test: ext",
             "type": "shell",
             "command": "cargo",
             "args": [
                 "run",
                 "--",
-                "--command",
-                "(sleep 3; cat)",
-                "--case-dir",
-                "cases",
-                "--show-input",
-                "--input-ext",
-                "din",
-                "--output-ext",
-                "ans",
+                "--command=cat",
+                "--case-dir=cases",
+                "--input-ext=din",
+                "--output-ext=ans",
             ],
             "group": {
                 "kind": "test",
@@ -36,16 +41,16 @@
             },
         },
         {
-            "label": "test 2",
+            "label": "test: options",
             "type": "shell",
             "command": "cargo",
             "args": [
                 "run",
                 "--",
-                "--command",
-                "(sleep 3; cat)",
-                "--case-dir",
-                "cases",
+                "--command='(sleep 1; cat)'",
+                "--case-dir=cases",
+                "--show-input=unknown,fail",
+                "--show-stdout=unknown",
             ],
             "group": {
                 "kind": "test",
@@ -55,7 +60,7 @@
         {
             "label": "test all",
             "type": "shell",
-            "dependsOn": ["test 1", "test 2"],
+            "dependsOn": ["test: help", "test: ext", "test: options"],
             "dependsOrder": "sequence",
             "group": {
                 "kind": "test",

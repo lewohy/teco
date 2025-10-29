@@ -1,8 +1,6 @@
 use std::time::Duration;
 
-use crate::model::{TecoCase, Token, TokenizedContent};
 use bat::Input;
-use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
 
 pub struct TecoSpinner {
@@ -10,15 +8,15 @@ pub struct TecoSpinner {
 }
 
 impl TecoSpinner {
-    pub fn new(case: &TecoCase) -> Self {
+    pub fn new(message: String) -> Self {
         let spinner = ProgressBar::new_spinner();
         spinner.set_style(
             ProgressStyle::with_template(
-                format!("  {} {} {}", " {prefix} ".bold(), "{spinner}", "{msg}").as_str(),
+                format!("{}  {}  {}", "{prefix}", "{spinner}", "{msg}").as_str(),
             )
             .unwrap(),
         );
-        spinner.set_prefix(format!("{}", case.name));
+        spinner.set_prefix(message);
         spinner.set_message(format!("Running...",));
         spinner.enable_steady_tick(Duration::from_millis(120));
 
@@ -47,25 +45,4 @@ pub fn print(content: &str, title: Option<&str>) {
         .grid(true)
         .print()
         .expect("bat::PrettyPrinter::print() 호출 실패");
-}
-
-pub fn print_tokenized_lines(tokenized: &TokenizedContent, title: Option<&str>) {
-    let content = {
-        let mut content = String::new();
-
-        for line in &tokenized.lines {
-            let token_strs: Vec<String> = line
-                .iter()
-                .map(|token| match token {
-                    Token::Word(s) => s.to_string(),
-                })
-                .collect();
-
-            content.push_str(&format!("{}\n", token_strs.join(" ")));
-        }
-
-        content
-    };
-
-    print(&content, title);
 }

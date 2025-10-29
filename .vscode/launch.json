@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug executable 'teco'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": ["run", "--bin=teco"],
+            },
+            "args": [
+                "--command",
+                "(sleep 3; cat)",
+                "--case-dir",
+                "cases",
+                "--show-input=unknown",
+            ],
+        },
+    ],
+}
