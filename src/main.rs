@@ -135,7 +135,7 @@ fn run(child: Child, case: TecoCase) -> TecoExecution {
                             stdout_content_lines
                                 .last_mut()
                                 .unwrap()
-                                .push(stdout_token_iter.next().unwrap());
+                                .push(stdout_token_iter.next().unwrap_or("".to_string()));
                         }
                         Token::Newline => {
                             expected_content_lines.push(vec![]);

@@ -51,6 +51,7 @@
                 "--case-dir=cases",
                 "--show-input=unknown,fail",
                 "--show-stdout=unknown",
+                "--show-diff",
             ],
             "group": {
                 "kind": "test",
